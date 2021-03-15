@@ -11,9 +11,10 @@
 #' @rdname apihelpers
 #' @examples
 #' set_canvas_token("abc123")
-set_canvas_token <- function(token) {
-  keyring::key_set_with_value("rcanvas_CANVAS_API_TOKEN", NULL, token)
+set_canvas_token <- function(institution, token) {
+  keyring::key_set_with_value("rcanvas_CANVAS_API_TOKEN", username = institution, password = token)
 }
+
 
 # env for the Canvas domain
 cdenv <- new.env()
@@ -23,13 +24,13 @@ cdenv <- new.env()
 #' @rdname apihelpers
 #' @examples
 #' set_canvas_domain("https://canvas.upenn.edu")
-set_canvas_domain <- function(domain) {
-  assign("rcanvas_CANVAS_DOMAIN", domain, envir = cdenv)
+set_canvas_domain <- function(institution, domain) {
+  assign("rcanvas_CANVAS_DOMAIN", institution, domain, envir = cdenv)
 }
 
 #' @rdname apihelpers
-check_token <- function() {
-  token <- keyring::key_get("rcanvas_CANVAS_API_TOKEN")
+check_token <- function(institution) {
+  token <- keyring::key_get("rcanvas_CANVAS_API_TOKEN", institution)
   if (identical(token, "")) {
     stop("Please set your Canvas API token with set_canvas_token.",
          call. = FALSE)
@@ -42,12 +43,12 @@ canvas_url <- function() paste0(get("rcanvas_CANVAS_DOMAIN", envir = cdenv), "/a
 make_canvas_url <- function(...) paste(canvas_url(), ..., sep = "/")
 
 #' @importFrom httr GET POST PUT
-canvas_query <- function(urlx, args = NULL, type = "GET") {
+canvas_query <- function(institution, urlx, args = NULL, type = "GET") {
 
   args <- sc(args)
   resp_fun_args <- list(url = urlx,
                         httr::user_agent("rcanvas - https://github.com/daranzolin/rcanvas"),
-                        httr::add_headers(Authorization = paste("Bearer", check_token())))
+                        httr::add_headers(Authorization = paste("Bearer", check_token(institution))))
 
   if (type %in% c("POST", "PUT"))
     resp_fun_args$body = args
@@ -96,13 +97,13 @@ convert_dates <- function(base_date = Sys.Date(), days) {
 #'
 #' # A post request to the group membership endpoint (replicating add_group_user):
 #' do_query(c("groups", 123, "memberships"), list(user_id=1), method = "POST")
-do_query <- function(endpoint, args=NULL, method="GET", process_response=(method == "GET")) {
+do_query <- function(institution, endpoint, args=NULL, method="GET", process_response=(method == "GET")) {
   endpoint = paste(endpoint, collapse="/")
   if (!grepl("^https?://", endpoint)) endpoint = paste0(canvas_url(), endpoint)
   if (process_response) {
     if (method != "GET") stop("Process_response can only be used on GET requests")
     process_response(endpoint, args)
   } else {
-    invisible(canvas_query(endpoint, args, method))
+    invisible(canvas_query(institution, endpoint, args, method))
   }
 }
