@@ -9,7 +9,7 @@
 #' @examples
 #'
 #' get_user_items(365, "details")
-get_user_items <- function(institution, user_id, item) {
+get_user_items <- function(program, user_id, item) {
   if (item == "page_views") warning("Not all page views will be returned.")
 
   if (item == "details") {
@@ -18,7 +18,7 @@ get_user_items <- function(institution, user_id, item) {
     url <- make_canvas_url("users", user_id, item)
   }
 
-  args <- list(access_token = check_token(institution),
+  args <- list(access_token = check_token(program),
                per_page = 100)
 
   dat <- process_response(url, args)
